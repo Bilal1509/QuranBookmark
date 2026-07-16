@@ -1,4 +1,4 @@
-package com.quranbookmark
+package com.bilal1509.QuranBookmark
 
 import android.app.Application
 import com.facebook.react.PackageList
