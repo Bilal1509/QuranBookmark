@@ -119,12 +119,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
+    padding: 15,
   },
   searchInput: {
     backgroundColor: '#E5E4E2',
-    borderRadius: 60,
-    padding: 20,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     marginHorizontal: 8,
   },
   resultsList: {

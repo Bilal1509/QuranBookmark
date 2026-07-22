@@ -1,4 +1,4 @@
-package com.bilal1509.QuranBookmark
+package com.QuranBookmark
 
 import android.os.Bundle
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen

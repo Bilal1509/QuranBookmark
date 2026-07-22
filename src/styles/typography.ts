@@ -9,17 +9,17 @@ type Typography = {
 
 const typography: Typography = {
   heading: {
-    fontSize: 30,
+    fontSize: 25,
     fontFamily: 'Poppins-Bold',
     color: '#000',
   },
   subheading: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: 'Poppins-Bold',
     color: '#000',
   },
   body: {
-    fontSize: 20,
+    fontSize: 15,
     fontFamily: 'Poppins-SemiBold',
     color: '#000',
   },

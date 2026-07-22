@@ -8,7 +8,7 @@ const About = () => {
     <SafeAreaView style={styles.container}>
       <Text style={[typography.heading, styles.header]}>About</Text>
       <Text style={[typography.body, styles.paragraph]}>
-        {`The Quran Bookmark app helps keep track of your recitations, either it be at home or at the Mosque.\n\nSo no need to fold pages on The Holy Quran at home and taking notes of how much you read at the mosque.\n\n\nContact us:\nbitboxlife@gmail.com`}
+        {`The Quran Bookmark app helps keep track of your recitations, either it be at home or at the Mosque.\n\nSo no need to fold pages on The Holy Quran at home and taking notes of how much you read at the mosque.\n\n\nContact us:\napplication.dev1509@gmail.com`}
       </Text>
     </SafeAreaView>
   );

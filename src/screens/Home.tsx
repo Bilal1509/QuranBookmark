@@ -15,7 +15,7 @@ import quranicSurahs from '../data/surahs';
 import typography from '../styles/typography';
 import { Surah, QuranProgress } from '../types';
 
-const CARD_HEIGHT = 84;
+const CARD_HEIGHT = 64;
 const CARD_MARGIN_VERTICAL = 8;
 const ROW_HEIGHT = CARD_HEIGHT + CARD_MARGIN_VERTICAL * 2;
 
@@ -79,12 +79,10 @@ const Home = () => {
     if (selectedSurah && isVerseListReady) {
       // Small delay to ensure the verse list is properly rendered
       setTimeout(() => {
-        if (verseListRef.current && savedVersePositionRef.current > 0) {
-          verseListRef.current.scrollToOffset({
-            offset: savedVersePositionRef.current,
-            animated: false,
-          });
-        }
+        verseListRef.current?.scrollToOffset({
+          offset: savedVersePositionRef.current,
+          animated: false,
+        });
       }, 200);
     }
   }, [selectedSurah, isVerseListReady]);
@@ -112,13 +110,20 @@ const Home = () => {
   };
 
   const handleTapVerse = (verseNumber: number) => {
-    setTappedVerses([verseNumber]);
-    saveProgress({
-      tappedVerses: [verseNumber],
-      selectedSurahName,
-      selectedSurahId: selectedSurah ? selectedSurah.id : null,
-      surahScrollPosition,
-      verseScrollPosition,
+    setTappedVerses((prev) => {
+      const next = prev.includes(verseNumber)
+        ? prev.filter((v) => v !== verseNumber)
+        : [...prev, verseNumber];
+
+      saveProgress({
+        tappedVerses: next,
+        selectedSurahName,
+        selectedSurahId: selectedSurah ? selectedSurah.id : null,
+        surahScrollPosition,
+        verseScrollPosition,
+      });
+
+      return next;
     });
   };
 
@@ -232,12 +237,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
+    padding: 15,
   },
   infoCard: {
     backgroundColor: '#E5E4E2',
-    borderRadius: 60,
-    padding: 20,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     marginVertical: 4,
     marginHorizontal: 8,
   },
