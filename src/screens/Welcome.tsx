@@ -2,13 +2,18 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import typography from '../styles/typography';
+import { useTypography } from '../styles/typography';
+import { useResponsive } from '../utils/responsive';
 
 type WelcomeProps = {
   onGetStarted: () => void;
 };
 
 const Welcome = ({ onGetStarted }: WelcomeProps) => {
+  const typography = useTypography();
+  const { scale, verticalScale, moderateScale } = useResponsive();
+  const styles = getStyles(scale, verticalScale, moderateScale);
+
   return (
     <LinearGradient colors={['#AFE1AF', '#3C6E47']} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -33,70 +38,73 @@ const Welcome = ({ onGetStarted }: WelcomeProps) => {
   );
 };
 
-const styles = StyleSheet.create({
- 
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    // justifyContent: 'center',
-    paddingTop: 16,
-    paddingHorizontal: '5%',
-  },
-  logoContainer: {
-    width: 66,
-    height: 66,
-    borderRadius: 38,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-    resizeMode: 'contain',
-  },
-  headerText: {
-    fontSize: 24,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 28,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  message: {
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  button: {
-    backgroundColor: '#E5E4E2',
-    borderRadius: 30,
-    padding: 14,
-    marginVertical: 24,
-    marginHorizontal: 80,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#447055',
-    fontSize: 18,
-  },
-});
+const getStyles = (
+  scale: (size: number) => number,
+  verticalScale: (size: number) => number,
+  moderateScale: (size: number, factor?: number) => number,
+) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    safeArea: {
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: verticalScale(16),
+      paddingHorizontal: '5%',
+    },
+    logoContainer: {
+      width: scale(56),
+      height: scale(56),
+      borderRadius: scale(38),
+      backgroundColor: '#FFFFFF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: scale(18),
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 4,
+    },
+    logo: {
+      width: scale(45),
+      height: scale(45),
+      resizeMode: 'contain',
+    },
+    headerText: {
+      fontSize: moderateScale(22),
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      paddingHorizontal: scale(24),
+    },
+    title: {
+      fontSize: moderateScale(25),
+      marginBottom: verticalScale(16),
+      textAlign: 'center',
+    },
+    message: {
+      textAlign: 'center',
+      lineHeight: moderateScale(24),
+    },
+    button: {
+      backgroundColor: '#E5E4E2',
+      borderRadius: moderateScale(30),
+      padding: moderateScale(14),
+      marginVertical: verticalScale(24),
+      marginHorizontal: '25%',
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: '#447055',
+      fontSize: moderateScale(18),
+    },
+  });
 
 export default Welcome;

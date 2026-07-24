@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, Text, StyleSheet, ImageSourcePropType } from 'react-native';
-import typography from '../styles/typography';
+import { useTypography } from '../styles/typography';
+import { useResponsive } from '../utils/responsive';
 
 type TabIconProps = {
   icon: ImageSourcePropType;
@@ -10,14 +11,22 @@ type TabIconProps = {
 };
 
 const TabIcon = ({ icon, color, focused, name }: TabIconProps) => {
+  const typography = useTypography();
+  const { scale, moderateScale } = useResponsive();
+
   return (
     <View style={styles.container}>
-      <Image source={icon} resizeMode="contain" tintColor={color} style={styles.icon} />
+      <Image
+        source={icon}
+        resizeMode="contain"
+        tintColor={color}
+        style={{ width: scale(24), height: scale(24) }}
+      />
       <Text
         style={[
           typography.caption,
           styles.label,
-          { color, fontFamily: focused ? 'Poppins-SemiBold' : 'Poppins-Regular' },
+          { color, fontFamily: focused ? 'Poppins-SemiBold' : 'Poppins-Regular', fontSize: moderateScale(18) },
         ]}
         numberOfLines={1}
         adjustsFontSizeToFit
@@ -35,13 +44,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     // gap: 8,
   },
-  icon: {
-    width: 24,
-    height: 24,
-  },
   label: {
     textAlign: 'center',
-    fontSize: 18,
   },
 });
 

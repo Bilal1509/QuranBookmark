@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,27 +8,34 @@ import {
   NativeScrollEvent,
   StyleSheet,
   TextInput,
-  Dimensions,
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import quranicSurahs from '../data/surahs';
-import typography from '../styles/typography';
+import { useTypography } from '../styles/typography';
+import { useResponsive } from '../utils/responsive';
 import { Surah, QuranProgress } from '../types';
 
-const CARD_HEIGHT = 64;
-const CARD_MARGIN_VERTICAL = 8;
-const ROW_HEIGHT = CARD_HEIGHT + CARD_MARGIN_VERTICAL * 2;
-const { height: screenHeight } = Dimensions.get('window');
-
-const getItemLayout = (_: unknown, index: number) => ({
-  length: ROW_HEIGHT,
-  offset: ROW_HEIGHT * index,
-  index,
-});
-
 const Home = () => {
+  const typography = useTypography();
+  const { scale, verticalScale, moderateScale } = useResponsive();
+
+  const CARD_HEIGHT = verticalScale(64);
+  const CARD_MARGIN_VERTICAL = verticalScale(8);
+  const ROW_HEIGHT = CARD_HEIGHT + CARD_MARGIN_VERTICAL * 2;
+
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({
+      length: ROW_HEIGHT,
+      offset: ROW_HEIGHT * index,
+      index,
+    }),
+    [ROW_HEIGHT],
+  );
+
+  const styles = getStyles(scale, verticalScale, moderateScale, CARD_HEIGHT, CARD_MARGIN_VERTICAL);
+
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [selectedSurahName, setSelectedSurahName] = useState('');
   const [tappedVerse, setTappedVerse] = useState<number | null>(null);
@@ -329,101 +336,107 @@ const Home = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    padding: 15,
-  },
-  searchContainer: {
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-  },
-  searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E5E4E2',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'Poppins-Regular',
-    color: '#000',
-    height: '100%',
-    padding: 0,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  clearButtonText: {
-    fontSize: 16,
-    color: '#999',
-  },
-  searchResultsCount: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  infoCard: {
-    backgroundColor: '#E5E4E2',
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginVertical: 4,
-    marginHorizontal: 8,
-  },
-  listsRow: {
-    flex: 1,
-    flexDirection: 'row',
-    marginTop: 10,
-  },
-  list: {
-    flex: 1,
-  },
-  card: {
-    height: CARD_HEIGHT,
-    backgroundColor: '#AFE1AF',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    marginVertical: CARD_MARGIN_VERTICAL,
-    marginHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardSelected: {
-    backgroundColor: '#B0E0E6',
-  },
-  cardHighlighted: {
-    backgroundColor: '#FFE4B5',
-  },
-  
-  highlightedText: {
-    backgroundColor: '#FFD700',
-    fontWeight: 'bold',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    marginTop: 50,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    fontFamily: 'Poppins-Regular',
-  },
-});
+const getStyles = (
+  scale: (size: number) => number,
+  verticalScale: (size: number) => number,
+  moderateScale: (size: number, factor?: number) => number,
+  cardHeight: number,
+  cardMarginVertical: number,
+) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#FFFFFF',
+    },
+    header: {
+      padding: moderateScale(15),
+    },
+    searchContainer: {
+      paddingHorizontal: scale(8),
+      paddingBottom: verticalScale(8),
+    },
+    searchWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#E5E4E2',
+      borderRadius: moderateScale(20),
+      paddingHorizontal: scale(12),
+      height: verticalScale(44),
+    },
+    searchIcon: {
+      fontSize: moderateScale(16),
+      marginRight: scale(8),
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: moderateScale(16),
+      fontFamily: 'Poppins-Regular',
+      color: '#000',
+      height: '100%',
+      padding: 0,
+    },
+    clearButton: {
+      padding: moderateScale(4),
+    },
+    clearButtonText: {
+      fontSize: moderateScale(16),
+      color: '#999',
+    },
+    searchResultsCount: {
+      fontSize: moderateScale(12),
+      color: '#666',
+      marginTop: verticalScale(4),
+      marginLeft: scale(4),
+    },
+    infoCard: {
+      backgroundColor: '#E5E4E2',
+      borderRadius: moderateScale(20),
+      paddingVertical: verticalScale(10),
+      paddingHorizontal: scale(20),
+      marginVertical: verticalScale(4),
+      marginHorizontal: scale(8),
+    },
+    listsRow: {
+      flex: 1,
+      flexDirection: 'row',
+      marginTop: verticalScale(10),
+    },
+    list: {
+      flex: 1,
+    },
+    card: {
+      height: cardHeight,
+      backgroundColor: '#AFE1AF',
+      borderRadius: moderateScale(20),
+      paddingHorizontal: scale(20),
+      marginVertical: cardMarginVertical,
+      marginHorizontal: scale(16),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardSelected: {
+      backgroundColor: '#B0E0E6',
+    },
+    cardHighlighted: {
+      backgroundColor: '#FFE4B5',
+    },
+    highlightedText: {
+      backgroundColor: '#FFD700',
+      fontWeight: 'bold',
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: moderateScale(20),
+      marginTop: verticalScale(50),
+    },
+    emptyStateText: {
+      fontSize: moderateScale(16),
+      color: '#666',
+      textAlign: 'center',
+      fontFamily: 'Poppins-Regular',
+    },
+  });
 
 export default Home;

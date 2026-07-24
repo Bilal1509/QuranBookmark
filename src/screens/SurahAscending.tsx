@@ -11,12 +11,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import quranicSurahs from '../data/surahs';
-import typography from '../styles/typography';
+import { useTypography } from '../styles/typography';
+import { useResponsive } from '../utils/responsive';
 import { Surah } from '../types';
 
 const STORAGE_KEY = '@selectedSurahs';
 
 const SurahAscending = () => {
+  const typography = useTypography();
+  const { scale, verticalScale, moderateScale } = useResponsive();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSurahs, setSelectedSurahs] = useState<Surah[]>([]);
   const [searchBarActivated, setSearchBarActivated] = useState(false);
@@ -61,6 +64,8 @@ const SurahAscending = () => {
     s.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const styles = getStyles(scale, verticalScale, moderateScale);
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={[typography.heading, styles.header]}>Surah Ascending</Text>
@@ -103,7 +108,7 @@ const SurahAscending = () => {
                   style={styles.removeButton}
                   onPress={() => handleRemoveSurah(item.id)}
                 >
-                  <Icon name="trash" size={20} color="#000" />
+                  <Icon name="trash" size={moderateScale(20)} color="#000" />
                 </TouchableOpacity>
               </View>
             )}
@@ -114,50 +119,55 @@ const SurahAscending = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: 15,
-  },
-  searchInput: {
-    backgroundColor: '#E5E4E2',
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginHorizontal: 8,
-  },
-  resultsList: {
-    height: '32%',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#AFE1AF',
-    borderRadius: 20,
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
-  helperText: {
-    marginHorizontal: 8,
-    padding: 20,
-  },
-  selectedHeading: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  selectedList: {
-    height: '70%',
-  },
-  removeButton: {
-    backgroundColor: '#E5E4E2',
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-});
+const getStyles = (
+  scale: (size: number) => number,
+  verticalScale: (size: number) => number,
+  moderateScale: (size: number, factor?: number) => number,
+) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      padding: moderateScale(15),
+    },
+    searchInput: {
+      backgroundColor: '#E5E4E2',
+      borderRadius: moderateScale(20),
+      paddingVertical: verticalScale(10),
+      paddingHorizontal: scale(20),
+      marginHorizontal: scale(8),
+    },
+    resultsList: {
+      height: '32%',
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: '#AFE1AF',
+      borderRadius: moderateScale(20),
+      padding: moderateScale(20),
+      marginVertical: verticalScale(8),
+      marginHorizontal: scale(16),
+    },
+    helperText: {
+      marginHorizontal: scale(8),
+      padding: moderateScale(20),
+    },
+    selectedHeading: {
+      paddingHorizontal: scale(20),
+      paddingTop: verticalScale(10),
+    },
+    selectedList: {
+      height: '70%',
+    },
+    removeButton: {
+      backgroundColor: '#E5E4E2',
+      borderRadius: moderateScale(20),
+      paddingVertical: verticalScale(5),
+      paddingHorizontal: scale(10),
+    },
+  });
 
 export default SurahAscending;
