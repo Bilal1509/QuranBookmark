@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform, StatusBar } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +9,7 @@ import TabIcon from './src/components/TabIcon';
 import Home from './src/screens/Home';
 import SurahAscending from './src/screens/SurahAscending';
 import About from './src/screens/About';
+import Welcome from './src/screens/Welcome';
 import { icons } from './src/constants';
 import { RootTabParamList } from './src/types';
 
@@ -77,10 +79,34 @@ function AppNavigator() {
 }
 
 function App() {
+  const [isCheckingFirstLaunch, setIsCheckingFirstLaunch] = useState(true);
+  const [isFirstLaunch, setIsFirstLaunch] = useState(false);
+
+  useEffect(() => {
+    const checkFirstLaunch = async () => {
+      const isFirstTime = await AsyncStorage.getItem('isFirstTime');
+      if (isFirstTime === null) {
+        setIsFirstLaunch(true);
+        await AsyncStorage.setItem('isFirstTime', 'false');
+      }
+      setIsCheckingFirstLaunch(false);
+    };
+
+    checkFirstLaunch();
+  }, []);
+
+  if (isCheckingFirstLaunch) {
+    return <SafeAreaProvider />;
+  }
+
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" />
-      <AppNavigator />
+      {isFirstLaunch ? (
+        <Welcome onGetStarted={() => setIsFirstLaunch(false)} />
+      ) : (
+        <AppNavigator />
+      )}
     </SafeAreaProvider>
   );
 }

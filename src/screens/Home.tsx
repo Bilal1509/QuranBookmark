@@ -1,13 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  Modal,
   NativeSyntheticEvent,
   NativeScrollEvent,
   StyleSheet,
+  TextInput,
+  Dimensions,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +20,7 @@ import { Surah, QuranProgress } from '../types';
 const CARD_HEIGHT = 64;
 const CARD_MARGIN_VERTICAL = 8;
 const ROW_HEIGHT = CARD_HEIGHT + CARD_MARGIN_VERTICAL * 2;
+const { height: screenHeight } = Dimensions.get('window');
 
 const getItemLayout = (_: unknown, index: number) => ({
   length: ROW_HEIGHT,
@@ -28,40 +31,58 @@ const getItemLayout = (_: unknown, index: number) => ({
 const Home = () => {
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [selectedSurahName, setSelectedSurahName] = useState('');
-  const [tappedVerses, setTappedVerses] = useState<number[]>([]);
+  const [tappedVerse, setTappedVerse] = useState<number | null>(null);
   const [surahScrollPosition, setSurahScrollPosition] = useState(0);
   const [verseScrollPosition, setVerseScrollPosition] = useState(0);
-  const [isWelcomeModalVisible, setIsWelcomeModalVisible] = useState(false);
   const [isVerseListReady, setIsVerseListReady] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [listHeight, setListHeight] = useState(0);
+  const [isScrollingToSurah, setIsScrollingToSurah] = useState(false);
 
   const surahListRef = useRef<FlatList<Surah>>(null);
   const verseListRef = useRef<FlatList<number>>(null);
   const savedVersePositionRef = useRef<number>(0);
   const isInitialLoadRef = useRef(true);
+  const targetSurahIdRef = useRef<number | null>(null);
+
+  // Filter surahs based on search query
+  const filteredSurahs = useMemo(() => {
+    if (!searchQuery.trim()) return quranicSurahs;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return quranicSurahs.filter(surah => 
+      surah.name.toLowerCase().includes(query) ||
+      surah.id.toString().includes(query)
+    );
+  }, [searchQuery]);
+
+  // Highlight matching text in search results
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) => 
+      part.toLowerCase() === query.toLowerCase() ? 
+        <Text key={index} style={styles.highlightedText}>{part}</Text> : 
+        <Text key={index}>{part}</Text>
+    );
+  };
 
   useEffect(() => {
     const init = async () => {
-      const isFirstTime = await AsyncStorage.getItem('isFirstTime');
-      if (isFirstTime === null) {
-        setIsWelcomeModalVisible(true);
-        await AsyncStorage.setItem('isFirstTime', 'false');
-      }
-
       const saved = await AsyncStorage.getItem('quranData');
       if (saved) {
         const data: QuranProgress = JSON.parse(saved);
         const surah = quranicSurahs.find((s) => s.id === data.selectedSurahId) ?? null;
 
-        setTappedVerses(data.tappedVerses ?? []);
+        setTappedVerse(data.tappedVerse ?? null);
         setSelectedSurahName(data.selectedSurahName ?? '');
         setSurahScrollPosition(data.surahScrollPosition ?? 0);
         setVerseScrollPosition(data.verseScrollPosition ?? 0);
         setSelectedSurah(surah);
         
-        // Store the verse position for later restoration
         savedVersePositionRef.current = data.verseScrollPosition ?? 0;
 
-        // Restore surah list position immediately after it's rendered
         setTimeout(() => {
           surahListRef.current?.scrollToOffset({
             offset: data.surahScrollPosition ?? 0,
@@ -77,7 +98,6 @@ const Home = () => {
   // Effect to restore verse list position when the verse list is ready
   useEffect(() => {
     if (selectedSurah && isVerseListReady) {
-      // Small delay to ensure the verse list is properly rendered
       setTimeout(() => {
         verseListRef.current?.scrollToOffset({
           offset: savedVersePositionRef.current,
@@ -87,21 +107,48 @@ const Home = () => {
     }
   }, [selectedSurah, isVerseListReady]);
 
+  // Auto-scroll to selected surah when search is cleared
+  useEffect(() => {
+    if (!searchQuery && selectedSurah && !isScrollingToSurah) {
+      setTimeout(() => {
+        scrollToSurahAndCenter(selectedSurah.id);
+      }, 200);
+    }
+  }, [searchQuery, selectedSurah]);
+
   const saveProgress = (payload: QuranProgress) => {
     AsyncStorage.setItem('quranData', JSON.stringify(payload));
   };
 
-  const handleSelectSurah = (surah: Surah) => {
-    // Reset verse list ready state when surah changes
-    setIsVerseListReady(false);
+  const scrollToSurahAndCenter = (surahId: number) => {
+    const index = quranicSurahs.findIndex(s => s.id === surahId);
+    if (index === -1 || !listHeight) return;
+
+    setIsScrollingToSurah(true);
     
+    const targetOffset = (index * ROW_HEIGHT) - (listHeight / 2) + (ROW_HEIGHT / 2);
+    const maxOffset = (quranicSurahs.length * ROW_HEIGHT) - listHeight;
+    const finalOffset = Math.max(0, Math.min(targetOffset, maxOffset));
+    
+    surahListRef.current?.scrollToOffset({
+      offset: finalOffset,
+      animated: true,
+    });
+
+    setTimeout(() => {
+      setIsScrollingToSurah(false);
+    }, 500);
+  };
+
+  const handleSelectSurah = (surah: Surah) => {
+    setIsVerseListReady(false);
     setSelectedSurah(surah);
     setSelectedSurahName(surah.name);
-    setTappedVerses([]);
+    setTappedVerse(null);
     savedVersePositionRef.current = 0;
-    
+
     saveProgress({
-      tappedVerses: [],
+      tappedVerse: null,
       selectedSurahName: surah.name,
       selectedSurahId: surah.id,
       surahScrollPosition,
@@ -109,14 +156,28 @@ const Home = () => {
     });
   };
 
+  const handleSearchSelect = (surah: Surah) => {
+    Keyboard.dismiss();
+    targetSurahIdRef.current = surah.id;
+    
+    // Clear search to show full list
+    setSearchQuery('');
+    
+    // Select the surah
+    handleSelectSurah(surah);
+    
+    // Scroll to center after list updates
+    setTimeout(() => {
+      scrollToSurahAndCenter(surah.id);
+    }, 300);
+  };
+
   const handleTapVerse = (verseNumber: number) => {
-    setTappedVerses((prev) => {
-      const next = prev.includes(verseNumber)
-        ? prev.filter((v) => v !== verseNumber)
-        : [...prev, verseNumber];
+    setTappedVerse((prev) => {
+      const next = prev === verseNumber ? null : verseNumber;
 
       saveProgress({
-        tappedVerses: next,
+        tappedVerse: next,
         selectedSurahName,
         selectedSurahId: selectedSurah ? selectedSurah.id : null,
         surahScrollPosition,
@@ -128,7 +189,9 @@ const Home = () => {
   };
 
   const handleSurahScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    setSurahScrollPosition(e.nativeEvent.contentOffset.y);
+    if (!isScrollingToSurah) {
+      setSurahScrollPosition(e.nativeEvent.contentOffset.y);
+    }
   };
 
   const handleVerseScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -141,23 +204,79 @@ const Home = () => {
     ? Array.from({ length: selectedSurah.totalVerses }, (_, i) => i + 1)
     : [];
 
-  // Update verse list ready state when it's rendered
   const handleVerseListContentSize = () => {
     if (!isVerseListReady && selectedSurah) {
       setIsVerseListReady(true);
     }
   };
 
+  const clearSearch = () => {
+    setSearchQuery('');
+    Keyboard.dismiss();
+  };
+
+  const renderSurahItem = ({ item }: { item: Surah }) => {
+  const isSelected = selectedSurah?.id === item.id;
+  const isHighlighted = searchQuery.trim() && 
+    (item.name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+     item.id.toString().includes(searchQuery.trim()));
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.card, 
+        isSelected && styles.cardSelected,
+        isHighlighted && styles.cardHighlighted
+      ]}
+      onPress={() => searchQuery ? handleSearchSelect(item) : handleSelectSurah(item)}
+    >
+      <Text style={typography.body}>
+        {searchQuery ? highlightText(item.name, searchQuery) : item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={[typography.heading, styles.header]}>Quran Bookmark</Text>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchWrapper}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Surah"
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (filteredSurahs.length === 1) {
+                handleSearchSelect(filteredSurahs[0]);
+              }
+            }}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+              <Text style={styles.clearButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        {searchQuery.length > 0 && (
+          <Text style={styles.searchResultsCount}>
+            {filteredSurahs.length} surah{filteredSurahs.length !== 1 ? 's' : ''} found
+          </Text>
+        )}
+      </View>
 
       <View style={styles.infoCard}>
         <Text style={typography.body}>Selected Surah: {selectedSurahName || 'None'}</Text>
       </View>
       <View style={styles.infoCard}>
         <Text style={typography.body}>
-          Verses Read: {tappedVerses.length > 0 ? tappedVerses.join(', ') : 'None'}
+          Verse Read: {tappedVerse !== null ? tappedVerse : 'None'}
         </Text>
       </View>
 
@@ -165,21 +284,22 @@ const Home = () => {
         <FlatList
           ref={surahListRef}
           style={styles.list}
-          data={quranicSurahs}
+          data={filteredSurahs}
           keyExtractor={(item) => String(item.id)}
           onScroll={handleSurahScroll}
           scrollEventThrottle={16}
           getItemLayout={getItemLayout}
           initialNumToRender={120}
           maxToRenderPerBatch={300}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.card, selectedSurah?.id === item.id && styles.cardSelected]}
-              onPress={() => handleSelectSurah(item)}
-            >
-              <Text style={typography.body}>{item.name}</Text>
-            </TouchableOpacity>
+          onLayout={(e) => setListHeight(e.nativeEvent.layout.height)}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                No surahs found matching "{searchQuery}"
+              </Text>
+            </View>
           )}
+          renderItem={renderSurahItem}
         />
 
         {selectedSurah && (
@@ -196,7 +316,7 @@ const Home = () => {
             onContentSizeChange={handleVerseListContentSize}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[styles.card, tappedVerses.includes(item) && styles.cardSelected]}
+                style={[styles.card, tappedVerse === item && styles.cardSelected]}
                 onPress={() => handleTapVerse(item)}
               >
                 <Text style={typography.body}>{item}</Text>
@@ -205,29 +325,6 @@ const Home = () => {
           />
         )}
       </View>
-
-      <Modal
-        visible={isWelcomeModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setIsWelcomeModalVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Welcome to Quran Bookmark!</Text>
-            <Text style={typography.body}>
-              Explore and keep track of your recitations. Slide the list of Surahs, tap and mark
-              the verses you have read.
-            </Text>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setIsWelcomeModalVisible(false)}
-            >
-              <Text style={[typography.body, styles.modalButtonText]}>Get Started</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -235,9 +332,47 @@ const Home = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     padding: 15,
+  },
+  searchContainer: {
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+  searchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E5E4E2',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: '#000',
+    height: '100%',
+    padding: 0,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  clearButtonText: {
+    fontSize: 16,
+    color: '#999',
+  },
+  searchResultsCount: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 4,
   },
   infoCard: {
     backgroundColor: '#E5E4E2',
@@ -268,38 +403,26 @@ const styles = StyleSheet.create({
   cardSelected: {
     backgroundColor: '#B0E0E6',
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+  cardHighlighted: {
+    backgroundColor: '#FFE4B5',
   },
-  modalCard: {
-    margin: 40,
-    padding: 20,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 30,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontFamily: 'Poppins-SemiBold',
+  
+  highlightedText: {
+    backgroundColor: '#FFD700',
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 12,
   },
-  modalButton: {
-    backgroundColor: '#0096FF',
-    borderRadius: 30,
-    padding: 10,
-    marginVertical: 8,
-    marginHorizontal: 26,
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
+    marginTop: 50,
   },
-  modalButtonText: {
-    color: '#fff',
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    fontFamily: 'Poppins-Regular',
   },
 });
 

@@ -11,7 +11,7 @@ export type RootTabParamList = {
 };
 
 export type QuranProgress = {
-  tappedVerses: number[];
+  tappedVerse: number | null;
   selectedSurahName: string | null;
   selectedSurahId: number | null;
   surahScrollPosition: number;
