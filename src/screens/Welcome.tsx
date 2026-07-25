@@ -58,8 +58,8 @@ const getStyles = (
       paddingHorizontal: '5%',
     },
     logoContainer: {
-      width: scale(56),
-      height: scale(56),
+      width: scale(50),
+      height: scale(50),
       borderRadius: scale(38),
       backgroundColor: '#FFFFFF',
       alignItems: 'center',
@@ -72,12 +72,13 @@ const getStyles = (
       elevation: 4,
     },
     logo: {
-      width: scale(45),
-      height: scale(45),
+      width: scale(40),
+      height: scale(40),
       resizeMode: 'contain',
     },
     headerText: {
       fontSize: moderateScale(22),
+      color: '#447055',
     },
     content: {
       flex: 1,
