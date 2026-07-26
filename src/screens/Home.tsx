@@ -127,20 +127,35 @@ const Home = () => {
     AsyncStorage.setItem('quranData', JSON.stringify(payload));
   };
 
-  const scrollToSurahAndCenter = (surahId: number) => {
+  const scrollToSurahAndCenter = async (surahId: number) => {
     const index = quranicSurahs.findIndex(s => s.id === surahId);
     if (index === -1 || !listHeight) return;
 
     setIsScrollingToSurah(true);
-    
+
     const targetOffset = (index * ROW_HEIGHT) - (listHeight / 2) + (ROW_HEIGHT / 2);
     const maxOffset = (quranicSurahs.length * ROW_HEIGHT) - listHeight;
     const finalOffset = Math.max(0, Math.min(targetOffset, maxOffset));
-    
+
     surahListRef.current?.scrollToOffset({
       offset: finalOffset,
       animated: true,
     });
+
+    setSurahScrollPosition(finalOffset);
+
+    const saved = await AsyncStorage.getItem('quranData');
+    const current: QuranProgress = saved
+      ? JSON.parse(saved)
+      : {
+          tappedVerse,
+          selectedSurahName,
+          selectedSurahId: selectedSurah ? selectedSurah.id : null,
+          surahScrollPosition,
+          verseScrollPosition,
+        };
+
+    saveProgress({ ...current, surahScrollPosition: finalOffset });
 
     setTimeout(() => {
       setIsScrollingToSurah(false);
